@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<title>Zäss Fitness</title>
+<meta name="description" content="Suivi quotidien d'entraînement, d'hydratation et de poids." />
+
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#14171a" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icon.svg" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Zäss" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Jost:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: {
+            950: '#0e1012',
+            900: '#14171a',
+            800: '#1c2024',
+            700: '#262b30',
+            600: '#33393f',
+          },
+          acid: {
+            400: '#d4ff70',
+            500: '#c8ff4d',
+            600: '#a3e034',
+          },
+        },
+        fontFamily: {
+          display: ['Anton', 'sans-serif'],
+          body: ['Jost', 'sans-serif'],
+        },
+      },
+    },
+  };
+</script>
+
+<style>
+  html, body { background-color: #0e1012; overscroll-behavior-y: none; }
+  body { font-family: 'Jost', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .font-display { font-family: 'Anton', sans-serif; }
+
+  ::-webkit-scrollbar { width: 0; height: 0; }
+
+  .noise::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .press {
+    transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.12s ease, box-shadow 0.12s ease;
+  }
+  .press:active { transform: scale(0.93); filter: brightness(0.92); }
+
+  .chip-check {
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes riseIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .rise { animation: riseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  @keyframes fillWave {
+    0%, 100% { transform: translateY(0) scaleY(1); }
+    50% { transform: translateY(-2px) scaleY(1.03); }
+  }
+  .water-fill { animation: fillWave 3.4s ease-in-out infinite; }
+
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+</style>
+</head>
+<body class="noise min-h-screen text-ink-100 antialiased selection:bg-acid-500 selection:text-ink-950">
+
+<div class="relative z-10 mx-auto flex min-h-screen max-w-md flex-col pb-28">
+
+  <!-- HEADER -->
+  <header class="sticky top-0 z-30 border-b border-ink-700/60 bg-ink-900/85 px-5 pb-4 pt-6 backdrop-blur-md">
+    <div class="flex items-center justify-between">
+      <div class="rise">
+        <h1 class="font-display text-3xl leading-none tracking-tight text-white">
+          Z<span class="text-acid-500">ä</span>SS <span class="text-acid-500">FITNESS</span>
+        </h1>
+        <p class="mt-1 text-[11px] font-medium uppercase tracking-[0.25em] text-ink-100/40" id="today-label">—</p>
+        <p class="mt-1.5 hidden items-center gap-1 text-xs font-semibold text-acid-500" id="streak-badge">
+          🔥 <span id="streak-count">0</span> jour(s) de suite
+        </p>
+      </div>
+      <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-acid-500/30 bg-ink-800 text-acid-500 rise" style="animation-delay: .08s">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M6.5 8.5 3 12l3.5 3.5M17.5 8.5 21 12l-3.5 3.5M2 12h1.8M20.2 12H22M7 6v12M9.6 6v12M14.4 6v12M17 6v12"/>
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 space-y-5 px-5 pt-5">
+
+    <!-- ENTRAINEMENT / REPOS (automatique selon le jour) -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-gradient-to-b from-ink-800 to-ink-900 p-5 shadow-[0_20px_50px_-25px_rgba(0,0,0,0.7)]" style="animation-delay: .05s">
+      <div class="mb-4 flex items-end justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-acid-500" id="training-label">Fixe</p>
+          <h2 class="font-display text-xl tracking-tight text-white">Entraînement</h2>
+        </div>
+        <p class="font-display text-2xl text-ink-100/25" id="prog-count-wrap"><span id="prog-count">0</span>/4</p>
+      </div>
+
+      <ul id="program-list" class="space-y-2.5"></ul>
+
+      <div id="rest-message" class="hidden rounded-2xl border border-ink-700/60 bg-ink-900/60 px-4 py-10 text-center">
+        <p class="font-display text-lg leading-snug text-white">Aujourd'hui, c'est repos, profite bien !</p>
+      </div>
+    </section>
+
+    <!-- RAPPELS / NOTIFICATIONS -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .06s">
+      <div class="mb-4 flex items-end justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-acid-500">Rappels</p>
+          <h2 class="font-display text-xl tracking-tight text-white">Notifications</h2>
+        </div>
+      </div>
+
+      <button
+        id="notif-btn"
+        class="press w-full rounded-2xl bg-acid-500 py-4 text-base font-bold uppercase tracking-wide text-ink-950 transition-colors duration-300 active:bg-acid-400 disabled:opacity-60"
+      >
+        Activer les rappels
+      </button>
+      <p class="mt-3 text-xs text-ink-100/35" id="notif-note">Reçois un rappel à 10h et 14h les jours d'entraînement.</p>
+    </section>
+
+    <!-- PAUSE RESTAURATION -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .07s">
+      <div class="mb-4 flex items-end justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-acid-500">Repos</p>
+          <h2 class="font-display text-xl tracking-tight text-white">Pause Restauration</h2>
+        </div>
+      </div>
+
+      <button
+        id="rest-timer-btn"
+        class="press w-full rounded-2xl bg-acid-500 py-4 text-base font-bold uppercase tracking-wide text-ink-950 transition-colors duration-300 active:bg-acid-400 disabled:active:scale-100"
+      >
+        60s Repos
+      </button>
+    </section>
+
+    <!-- CHRONO GAINAGE -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .08s">
+      <div class="mb-4 flex items-end justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-[0.3em] text-acid-500">Chrono</p>
+          <h2 class="font-display text-xl tracking-tight text-white">Gainage</h2>
+        </div>
+        <span class="text-xs font-semibold uppercase tracking-wide text-ink-100/40">Record <span id="plank-best">—</span></span>
+      </div>
+
+      <div class="flex flex-col items-center gap-4 rounded-2xl border border-ink-700/60 bg-ink-900/60 py-6">
+        <span class="font-display text-5xl tabular-nums text-white" id="plank-display">00:00.0</span>
+        <span class="text-xs text-ink-100/35">Objectif : 45 sec par set</span>
+      </div>
+
+      <div class="mt-4 flex gap-3">
+        <button id="plank-toggle" class="press flex-1 rounded-2xl bg-acid-500 py-3.5 text-sm font-bold uppercase tracking-wide text-ink-950 active:bg-acid-400">
+          Démarrer
+        </button>
+        <button id="plank-reset" class="press rounded-2xl border border-ink-600 bg-ink-700 px-5 py-3.5 text-sm font-semibold uppercase tracking-wide text-ink-100/70 active:border-ink-500">
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- EAU -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .1s">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="font-display text-xl tracking-tight text-white">Hydratation</h2>
+        <span class="text-[11px] font-semibold uppercase tracking-[0.2em] text-ink-100/40">Objectif 8</span>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <button id="water-minus" class="press flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-ink-600 bg-ink-700 text-xl font-semibold text-ink-100/80 active:border-ink-500">
+          &minus;
+        </button>
+
+        <div class="relative h-16 flex-1 overflow-hidden rounded-2xl border border-ink-600 bg-ink-900">
+          <div id="water-fill" class="water-fill absolute inset-x-0 bottom-0 bg-gradient-to-t from-acid-600 to-acid-400" style="height: 0%"></div>
+          <div class="relative z-10 flex h-full items-center justify-center gap-2">
+            <span class="font-display text-2xl text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]" id="water-count">0</span>
+            <span class="text-sm text-white/70">/ 8 verres</span>
+          </div>
+        </div>
+
+        <button id="water-plus" class="press flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-acid-500 text-xl font-bold text-ink-950 active:bg-acid-400">
+          +
+        </button>
+      </div>
+      <p class="mt-3 text-xs text-ink-100/35" id="water-note">Aucun verre enregistré aujourd'hui.</p>
+    </section>
+
+    <!-- POIDS -->
+    <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .15s">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="font-display text-xl tracking-tight text-white">Poids</h2>
+        <span id="weight-delta" class="text-xs font-semibold uppercase tracking-wide text-ink-100/40"></span>
+      </div>
+
+      <form id="weight-form" class="flex items-center gap-3">
+        <div class="relative flex-1">
+          <input
+            id="weight-input"
+            type="number"
+            inputmode="decimal"
+            step="0.1"
+            min="20"
+            max="400"
+            placeholder="0.0"
+            class="w-full rounded-2xl border border-ink-600 bg-ink-900 px-4 py-3.5 text-lg font-semibold text-white placeholder:text-ink-100/25 focus:border-acid-500 focus:outline-none focus:ring-2 focus:ring-acid-500/25"
+          />
+          <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm text-ink-100/40">kg</span>
+        </div>
+        <button type="submit" class="press shrink-0 rounded-2xl bg-acid-500 px-5 py-3.5 text-sm font-bold uppercase tracking-wide text-ink-950 active:bg-acid-400">
+          Noter
+        </button>
+      </form>
+
+      <div class="mt-4 flex items-center justify-between rounded-2xl border border-ink-700/60 bg-ink-900/60 px-4 py-3">
+        <p class="text-xs uppercase tracking-[0.2em] text-ink-100/35">Dernier relevé</p>
+        <p class="font-display text-lg text-white" id="weight-last">—</p>
+      </div>
+
+      <div id="weight-history" class="mt-3 space-y-1.5"></div>
+    </section>
+
+    <footer class="pt-2 text-center text-[11px] text-ink-100/25">
+      Données enregistrées uniquement sur cet appareil.
+      <br />
+      <button id="reset-data" class="mt-2 underline decoration-dotted underline-offset-2 text-ink-100/35 active:text-ink-100/60">
+        Réinitialiser mes données
+      </button>
+    </footer>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center opacity-0 transition-all duration-300 translate-y-2">
+  <div class="rounded-full border border-acid-500/30 bg-ink-800/95 px-5 py-2.5 text-sm font-semibold text-acid-400 shadow-lg backdrop-blur-md">
+    <span id="toast-text"></span>
+  </div>
+</div>
+
+<!-- JOURNAL DE BORD -->
+<section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .2s">
+  <h2 class="font-display text-xl tracking-tight text-white mb-4">Journal de Bord</h2>
+  <div id="journal-list" class="space-y-2">
+    <!-- Les jours s'afficheront ici -->
+  </div>
+</section>
+
+<!-- MODALE DE RÉCAPITULATIF -->
+<div id="modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-5 bg-ink-950/90 backdrop-blur-sm">
+  <div class="bg-ink-800 p-6 rounded-3xl border border-ink-700 w-full max-w-sm">
+    <h3 id="modal-title" class="font-display text-xl text-white mb-4">Date</h3>
+    <div id="modal-content" class="text-sm text-ink-100/70 space-y-2"></div>
+    <input type="file" id="photo-input" accept="image/*" class="hidden" />
+    <button onclick="document.getElementById('photo-input').click()" class="mt-4 w-full bg-ink-700 py-2 rounded-xl text-white">Ajouter Photo</button>
+    <button onclick="document.getElementById('modal').classList.add('hidden')" class="mt-2 w-full bg-acid-500 py-2 rounded-xl text-ink-950 font-bold">Fermer</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const todayKey = () => new Date().toISOString().slice(0, 10);
+  const fmtDate = (d) =>
+    new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(d);
+
+  document.getElementById('today-label').textContent = fmtDate(new Date());
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    const text = document.getElementById('toast-text');
+    text.textContent = msg;
+    toast.classList.remove('opacity-0', 'translate-y-2');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-2');
+      toast.classList.remove('opacity-100', 'translate-y-0');
+    }, 1600);
+  }
+
+  // ---------- Planning automatique (jour d'entraînement vs repos) ----------
+  // Lundi(1), Mardi(2), Jeudi(4), Vendredi(5), Samedi(6) => entraînement
+  // Mercredi(3), Dimanche(0) => repos
+  function isTrainingDay(date) {
+    const day = (date || new Date()).getDay();
+    return day !== 0 && day !== 3;
+  }
+
+  function renderTrainingSection() {
+    const training = isTrainingDay();
+    document.getElementById('program-list').classList.toggle('hidden', !training);
+    document.getElementById('prog-count-wrap').classList.toggle('hidden', !training);
+    document.getElementById('rest-message').classList.toggle('hidden', training);
+    document.getElementById('training-label').textContent = training ? 'Fixe' : 'Repos';
+  }
+
+  // ---------- Programme du jour ----------
+  const EXERCISES = [
+    { id: 'squats', name: 'Squats', detail: '3 x 15 reps' },
+    { id: 'pompes', name: 'Pompes', detail: '3 x 10 reps' },
+    { id: 'fentes', name: 'Fentes', detail: '3 x 12 reps' },
+    { id: 'gainage', name: 'Gainage', detail: '3 x 45 sec' },
+  ];
+
+  const progKey = () => `zass-program-${todayKey()}`;
+
+  function loadProgram() {
+    try {
+      return JSON.parse(localStorage.getItem(progKey())) || {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveProgram(state) {
+    localStorage.setItem(progKey(), JSON.stringify(state));
+  }
+
+  function renderProgram() {
+    const state = loadProgram();
+    const list = document.getElementById('program-list');
+    list.innerHTML = '';
+
+    EXERCISES.forEach((ex, i) => {
+      const done = !!state[ex.id];
+      const li = document.createElement('li');
+      li.className = 'rise';
+      li.style.animationDelay = `${0.05 * i}s`;
+      li.innerHTML = `
+        <button data-id="${ex.id}" class="prog-btn press chip-check flex w-full items-center gap-3.5 rounded-2xl border px-4 py-3.5 text-left
+          ${done ? 'border-acid-500/40 bg-acid-500/10' : 'border-ink-700 bg-ink-900/60'}">
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 chip-check
+            ${done ? 'border-acid-500 bg-acid-500' : 'border-ink-600'}">
+            ${done ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0e1012" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>' : ''}
+          </span>
+          <span class="flex-1">
+            <span class="block font-semibold ${done ? 'text-white/60 line-through decoration-acid-500/60' : 'text-white'}">${ex.name}</span>
+            <span class="block text-xs ${done ? 'text-ink-100/25' : 'text-ink-100/45'}">${ex.detail}</span>
+          </span>
+        </button>
+      `;
+      list.appendChild(li);
+    });
+
+    const doneCount = EXERCISES.filter((ex) => state[ex.id]).length;
+    document.getElementById('prog-count').textContent = doneCount;
+  }
+
+  document.getElementById('program-list').addEventListener('click', (e) => {
+    const btn = e.target.closest('.prog-btn');
+    if (!btn) return;
+    const id = btn.dataset.id;
+    const state = loadProgram();
+    state[id] = !state[id];
+    saveProgram(state);
+    renderProgram();
+    renderStreak();
+    if (state[id]) showToast(`${EXERCISES.find((x) => x.id === id).name} validé !`);
+  });
+
+  renderProgram();
+  renderTrainingSection();
+
+  // ---------- Série de jours (streak) ----------
+  function isDayComplete(dateStr) {
+    try {
+      const state = JSON.parse(localStorage.getItem(`zass-program-${dateStr}`)) || {};
+      return EXERCISES.every((ex) => state[ex.id]);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function computeStreak() {
+    const cursor = new Date();
+    let streak = 0;
+    if (isDayComplete(todayKey())) streak++;
+    cursor.setDate(cursor.getDate() - 1);
+    while (isDayComplete(cursor.toISOString().slice(0, 10))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderStreak() {
+    const streak = computeStreak();
+    const badge = document.getElementById('streak-badge');
+    document.getElementById('streak-count').textContent = streak;
+    badge.classList.toggle('hidden', streak === 0);
+    badge.classList.toggle('flex', streak > 0);
+  }
+
+  renderStreak();
+
+  // ---------- Timer de repos ----------
+  const REST_DURATION_SEC = 60;
+  const restBtn = document.getElementById('rest-timer-btn');
+  let restInterval = null;
+  let restRemaining = REST_DURATION_SEC;
+
+  function fmtCountdown(sec) {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+
+  function resetRestBtn() {
+    restBtn.disabled = false;
+    restBtn.textContent = '60s Repos';
+    restBtn.classList.remove('bg-green-500', 'active:bg-green-400', 'text-white');
+    restBtn.classList.add('bg-acid-500', 'active:bg-acid-400', 'text-ink-950');
+  }
+
+  function startRestTimer() {
+    if (restInterval) return;
+    restRemaining = REST_DURATION_SEC;
+    restBtn.disabled = true;
+    restBtn.classList.add('opacity-90');
+    restBtn.textContent = fmtCountdown(restRemaining);
+
+    restInterval = setInterval(() => {
+      restRemaining--;
+      if (restRemaining <= 0) {
+        clearInterval(restInterval);
+        restInterval = null;
+        restBtn.classList.remove('opacity-90', 'bg-acid-500', 'active:bg-acid-400', 'text-ink-950');
+        restBtn.classList.add('bg-green-500', 'active:bg-green-400', 'text-white');
+        restBtn.textContent = 'Repos terminé !';
+        restBtn.disabled = false;
+        if ('vibrate' in navigator) navigator.vibrate(200);
+        showToast('Repos terminé !');
+        setTimeout(resetRestBtn, 2000);
+      } else {
+        restBtn.textContent = fmtCountdown(restRemaining);
+      }
+    }, 1000);
+  }
+
+  restBtn.addEventListener('click', startRestTimer);
+
+  // ---------- Eau ----------
+  const WATER_GOAL = 8;
+  const waterKey = () => `zass-water-${todayKey()}`;
+
+  function loadWater() {
+    return parseInt(localStorage.getItem(waterKey()) || '0', 10);
+  }
+
+  function renderWater() {
+    const count = loadWater();
+    document.getElementById('water-count').textContent = count;
+    document.getElementById('water-fill').style.height = `${Math.min(100, (count / WATER_GOAL) * 100)}%`;
+    const note = document.getElementById('water-note');
+    if (count === 0) note.textContent = "Aucun verre enregistré aujourd'hui.";
+    else if (count >= WATER_GOAL) note.textContent = 'Objectif atteint, bravo !';
+    else note.textContent = `Encore ${WATER_GOAL - count} verre(s) pour atteindre l'objectif.`;
+  }
+
+  document.getElementById('water-plus').addEventListener('click', () => {
+    const count = Math.min(WATER_GOAL + 4, loadWater() + 1);
+    localStorage.setItem(waterKey(), String(count));
+    renderWater();
+    if (count === WATER_GOAL) showToast('Objectif hydratation atteint !');
+  });
+
+  document.getElementById('water-minus').addEventListener('click', () => {
+    const count = Math.max(0, loadWater() - 1);
+    localStorage.setItem(waterKey(), String(count));
+    renderWater();
+  });
+
+  renderWater();
+
+  // ---------- Poids ----------
+  const WEIGHT_KEY = 'zass-weight-history';
+
+  function loadWeightHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(WEIGHT_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveWeightHistory(entries) {
+    localStorage.setItem(WEIGHT_KEY, JSON.stringify(entries));
+  }
+
+  function renderWeight() {
+    const entries = loadWeightHistory();
+    const last = document.getElementById('weight-last');
+    const delta = document.getElementById('weight-delta');
+    const historyEl = document.getElementById('weight-history');
+
+    if (!entries.length) {
+      last.textContent = '—';
+      delta.textContent = '';
+      historyEl.innerHTML = '<p class="text-xs text-ink-100/30">Aucun relevé pour le moment.</p>';
+      return;
+    }
+
+    const sorted = [...entries].sort((a, b) => b.ts - a.ts);
+    last.textContent = `${sorted[0].value.toFixed(1)} kg`;
+
+    if (sorted.length > 1) {
+      const diff = sorted[0].value - sorted[1].value;
+      const sign = diff > 0 ? '+' : '';
+      delta.textContent = `${sign}${diff.toFixed(1)} kg`;
+      delta.className = `text-xs font-semibold uppercase tracking-wide ${diff > 0 ? 'text-orange-400/80' : diff < 0 ? 'text-acid-500' : 'text-ink-100/40'}`;
+    } else {
+      delta.textContent = '';
+    }
+
+    historyEl.innerHTML = sorted
+      .slice(0, 5)
+      .map((entry) => {
+        const d = new Date(entry.ts);
+        const label = new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short' }).format(d);
+        return `
+          <div class="flex items-center justify-between rounded-xl px-3 py-2 text-sm">
+            <span class="text-ink-100/40">${label}</span>
+            <span class="font-semibold text-white/80">${entry.value.toFixed(1)} kg</span>
+          </div>
+        `;
+      })
+      .join('');
+  }
+
+  document.getElementById('weight-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('weight-input');
+    const value = parseFloat(input.value);
+    if (!value || value < 20 || value > 400) {
+      input.classList.add('ring-2', 'ring-orange-500/60');
+      setTimeout(() => input.classList.remove('ring-2', 'ring-orange-500/60'), 600);
+      return;
+    }
+    const entries = loadWeightHistory();
+    entries.push({ value, ts: Date.now() });
+    saveWeightHistory(entries);
+    input.value = '';
+    renderWeight();
+    showToast('Poids enregistré');
+  });
+
+  renderWeight();
+
+  // ---------- Chrono gainage ----------
+  const PLANK_BEST_KEY = 'zass-plank-best';
+  const PLANK_TARGET_SEC = 45;
+
+  let plankInterval = null;
+  let plankRunning = false;
+  let plankElapsedMs = 0;
+  let plankStartedAt = 0;
+  let plankTargetHit = false;
+
+  function fmtStopwatch(ms) {
+    const totalSec = ms / 1000;
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, '0')}:${s.toFixed(1).padStart(4, '0')}`;
+  }
+
+  function loadPlankBest() {
+    return parseFloat(localStorage.getItem(PLANK_BEST_KEY) || '0');
+  }
+
+  function renderPlankBest() {
+    const best = loadPlankBest();
+    document.getElementById('plank-best').textContent = best > 0 ? fmtStopwatch(best * 1000) : '—';
+  }
+
+  function currentPlankMs() {
+    return plankRunning ? plankElapsedMs + (Date.now() - plankStartedAt) : plankElapsedMs;
+  }
+
+  function updatePlankDisplay() {
+    const ms = currentPlankMs();
+    document.getElementById('plank-display').textContent = fmtStopwatch(ms);
+    if (!plankTargetHit && ms / 1000 >= PLANK_TARGET_SEC) {
+      plankTargetHit = true;
+      showToast('Objectif 45 sec atteint !');
+      if ('vibrate' in navigator) navigator.vibrate(150);
+    }
+  }
+
+  function startPlank() {
+    plankRunning = true;
+    plankStartedAt = Date.now();
+    document.getElementById('plank-toggle').textContent = 'Pause';
+    plankInterval = setInterval(updatePlankDisplay, 100);
+  }
+
+  function pausePlank() {
+    plankRunning = false;
+    plankElapsedMs += Date.now() - plankStartedAt;
+    clearInterval(plankInterval);
+    document.getElementById('plank-toggle').textContent = 'Reprendre';
+    updatePlankDisplay();
+
+    const seconds = plankElapsedMs / 1000;
+    const best = loadPlankBest();
+    if (seconds > best) {
+      localStorage.setItem(PLANK_BEST_KEY, String(seconds));
+      renderPlankBest();
+      if (seconds > 0) {
+        showToast('Nouveau record de gainage !');
+        if ('vibrate' in navigator) navigator.vibrate([100, 60, 100]);
+      }
+    }
+  }
+
+  document.getElementById('plank-toggle').addEventListener('click', () => {
+    if (plankRunning) pausePlank();
+    else startPlank();
+  });
+
+  document.getElementById('plank-reset').addEventListener('click', () => {
+    if (plankRunning) pausePlank();
+    plankElapsedMs = 0;
+    plankTargetHit = false;
+    document.getElementById('plank-toggle').textContent = 'Démarrer';
+    updatePlankDisplay();
+  });
+
+  renderPlankBest();
+  updatePlankDisplay();
+
+  // ---------- Réinitialisation des données ----------
+  document.getElementById('reset-data').addEventListener('click', () => {
+    if (!confirm('Effacer toutes les données enregistrées sur cet appareil ?')) return;
+    Object.keys(localStorage)
+      .filter((k) => k.startsWith('zass-'))
+      .forEach((k) => localStorage.removeItem(k));
+    location.reload();
+  });
+
+  // ---------- Notifications (rappels d'entraînement) ----------
+  const REMINDER_HOURS = [10, 14];
+  let reminderInterval = null;
+  let lastReminderSlot = null;
+
+  function updateNotifButton() {
+    const btn = document.getElementById('notif-btn');
+    const note = document.getElementById('notif-note');
+    if (!('Notification' in window)) {
+      btn.textContent = 'Notifications non supportées';
+      btn.disabled = true;
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      btn.textContent = 'Rappels activés ✓';
+      btn.disabled = true;
+      note.textContent = 'Tu recevras un rappel à 10h et 14h les jours d\'entraînement.';
+    } else if (Notification.permission === 'denied') {
+      btn.textContent = 'Notifications bloquées';
+      btn.disabled = true;
+      note.textContent = 'Autorise les notifications dans les réglages du navigateur pour activer les rappels.';
+    } else {
+      btn.textContent = 'Activer les rappels';
+      btn.disabled = false;
+    }
+  }
+
+  function sendTrainingReminder() {
+    try {
+      new Notification('Zäss Fitness', {
+        body: "C'est l'heure de ta séance, champion !",
+        icon: '/icon.svg',
+      });
+    } catch (e) {
+      // Certains navigateurs mobiles exigent de passer par le service worker.
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+        navigator.serviceWorker.getRegistration().then((reg) => {
+          if (reg) {
+            reg.showNotification('Zäss Fitness', {
+              body: "C'est l'heure de ta séance, champion !",
+              icon: '/icon.svg',
+            });
+          }
+        });
+      }
+    }
+  }
+
+  function checkReminderTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+
+    if (minutes !== 0 || REMINDER_HOURS.indexOf(hours) === -1) return;
+    if (!isTrainingDay(now)) return;
+
+    const slot = `${todayKey()}-${hours}`;
+    if (lastReminderSlot === slot) return;
+    lastReminderSlot = slot;
+    sendTrainingReminder();
+  }
+
+  function startReminderCheck() {
+    if (reminderInterval) return;
+    checkReminderTime();
+    reminderInterval = setInterval(checkReminderTime, 60 * 1000);
+  }
+
+  document.getElementById('notif-btn').addEventListener('click', () => {
+    if (!('Notification' in window)) {
+      showToast('Notifications non supportées sur cet appareil');
+      return;
+    }
+    Notification.requestPermission().then((permission) => {
+      updateNotifButton();
+      if (permission === 'granted') {
+        showToast('Rappels activés');
+        startReminderCheck();
+      } else {
+        showToast('Autorisation refusée');
+      }
+    });
+  });
+
+  updateNotifButton();
+  if ('Notification' in window && Notification.permission === 'granted') {
+    startReminderCheck();
+  }
+
+  // ---------- Service worker ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+})();
+</script>
+</body>
+</html>
