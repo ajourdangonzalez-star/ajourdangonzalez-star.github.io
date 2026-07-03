@@ -254,24 +254,7 @@
       <div id="weight-history" class="mt-3 space-y-1.5"></div>
     </section>
 
-    <footer class="pt-2 text-center text-[11px] text-ink-100/25">
-      Données enregistrées uniquement sur cet appareil.
-      <br />
-      <button id="reset-data" class="mt-2 underline decoration-dotted underline-offset-2 text-ink-100/35 active:text-ink-100/60">
-        Réinitialiser mes données
-      </button>
-    </footer>
-  </main>
-</div>
-
-<!-- TOAST -->
-<div id="toast" class="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center opacity-0 transition-all duration-300 translate-y-2">
-  <div class="rounded-full border border-acid-500/30 bg-ink-800/95 px-5 py-2.5 text-sm font-semibold text-acid-400 shadow-lg backdrop-blur-md">
-    <span id="toast-text"></span>
-  </div>
-</div>
-
-<!-- JOURNAL DE BORD -->
+    <!-- JOURNAL DE BORD -->
 <section class="rise rounded-3xl border border-ink-700/60 bg-ink-800 p-5" style="animation-delay: .2s">
   <h2 class="font-display text-xl tracking-tight text-white mb-4">Journal de Bord</h2>
   <div id="journal-list" class="space-y-2">
@@ -289,6 +272,24 @@
     <button onclick="document.getElementById('modal').classList.add('hidden')" class="mt-2 w-full bg-acid-500 py-2 rounded-xl text-ink-950 font-bold">Fermer</button>
   </div>
 </div>
+
+    <footer class="pt-2 text-center text-[11px] text-ink-100/25">
+      Données enregistrées uniquement sur cet appareil.
+      <br />
+      <button id="reset-data" class="mt-2 underline decoration-dotted underline-offset-2 text-ink-100/35 active:text-ink-100/60">
+        Réinitialiser mes données
+      </button>
+    </footer>
+  </main>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center opacity-0 transition-all duration-300 translate-y-2">
+  <div class="rounded-full border border-acid-500/30 bg-ink-800/95 px-5 py-2.5 text-sm font-semibold text-acid-400 shadow-lg backdrop-blur-md">
+    <span id="toast-text"></span>
+  </div>
+</div>
+
 
 <script>
 (function () {
