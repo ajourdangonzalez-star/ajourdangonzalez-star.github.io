@@ -770,6 +770,66 @@
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     });
   }
+
+  const photoInput = document.getElementById('photo-input');
+  if (photoInput) {
+    photoInput.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const date = document.getElementById('modal-title').dataset.date;
+        localStorage.setItem(`zass-photo-${date}`, event.target.result);
+        alert('Photo enregistrée !');
+        // Optionnel : recharger la modale pour afficher la photo
+        openJournal(date); 
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Fonction globale pour ouvrir la modale
+  window.openJournal = function(date) {
+    const modal = document.getElementById('modal');
+    const content = document.getElementById('modal-content');
+    const title = document.getElementById('modal-title');
+    
+    title.textContent = date;
+    title.dataset.date = date;
+    
+    const program = JSON.parse(localStorage.getItem(`zass-program-${date}`)) || {};
+    const water = localStorage.getItem(`zass-water-${date}`) || 0;
+    const photo = localStorage.getItem(`zass-photo-${date}`);
+    
+    content.innerHTML = `
+      <p>Eau : ${water} verres</p>
+      <p>Entraînement : ${Object.keys(program).length > 0 ? 'Fait' : 'Non fait'}</p>
+      ${photo ? `<img src="${photo}" class="mt-2 rounded-xl w-full h-32 object-cover">` : ''}
+    `;
+    modal.classList.remove('hidden');
+  };
+
+  // --- 3. GÉNÉRATION DU JOURNAL (Pour remplir la section vide) ---
+  // Ajoute ceci pour lister les jours récents
+  function renderJournalList() {
+    const journalList = document.getElementById('journal-list');
+    journalList.innerHTML = '';
+    
+    // On génère les 7 derniers jours par exemple
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateKey = d.toISOString().slice(0, 10);
+      
+      const div = document.createElement('div');
+      div.className = 'cursor-pointer p-3 border border-ink-700 rounded-xl hover:bg-ink-700';
+      div.textContent = `Résumé du ${dateKey}`;
+      div.onclick = () => window.openJournal(dateKey);
+      journalList.appendChild(div);
+    }
+  }
+  
+  renderJournalList();
 })();
 </script>
 </body>
